@@ -24,6 +24,6 @@ CREATE TABLE IF NOT EXISTS users (
     user_text text,
     uri text,
     created_at timestamp,
-    PRIMARY KEY (user_id, created_at));
+    PRIMARY KEY (created_at, user_id));
 
 -- docker exec -it node1 cqlsh -e

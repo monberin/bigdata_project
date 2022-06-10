@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from json import loads
 from kafka import KafkaConsumer
 
@@ -28,35 +29,56 @@ class CassandraClient:
     def close(self):
         self.session.shutdown()
 
-    # def select1(self, uid):
-    #     """
-    #     Return all transactions for uid that were fraudulent
-    #     :param uid: str
-    #     :return: dict
-    #     """
-    #     query = f"SELECT * from uid_fraud WHERE uid = '{uid}' AND isFraud = 1;"
-    #     return list(self.execute(query))
-    #
-    # def select2(self, uid):
-    #     """
-    #     Return 3 biggest transactions for uid
-    #     :param uid: str
-    #     :return: dict
-    #     """
-    #     query = f"SELECT * from uid_big WHERE uid = '{uid}';"
-    #     return list(sorted(self.execute(query), reverse=True))[:3]
-    #
-    # def select3(self, uid, date1, date2):
-    #     """
-    #     Return sum of all transactions for a uid for a given period of time
-    #     :param uid: str
-    #     :param date1: str
-    #     :param date2: str
-    #     :return: dict
-    #     """
-    #     query = f"SELECT SUM(amount) from reciever_uid WHERE reciever_uid = '{uid}' AND (transaction_date >= '{date1}') AND " \
-    #             f"(transaction_date <= '{date2}'); "
-    #     return list(self.execute(query))
+    def select1(self):
+        """
+        Return the list of existing domains for which pages were created
+        :return: list
+        """
+        query = f"SELECT DISTINCT domain_ from domains;"
+        return list(self.execute(query))
+
+    def select2(self, user_id):
+        """
+        Return all the pages which were created by the user with a specified user_id.
+        :param user_id: str
+        :return: list
+        """
+        query = f"SELECT uri from users WHERE user_id = '{user_id}';"
+        return list(self.execute(query))
+
+    def select3(self, domain):
+        """
+        Return the number of articles created for a specified domain.
+        :param domain: str
+        :return: list
+        """
+        query = f"SELECT COUNT(*) from domains WHERE domain_ = '{domain}';"
+        return list(self.execute(query))
+
+    def select4(self, page_id):
+        """
+        Return the page with the specified page_id
+        :param page_id: str
+        :return: list
+        """
+        query = f"SELECT * from page_ids WHERE page_id = '{page_id}';"
+        return list(self.execute(query))
+
+    def select5(self, date1, date2):
+        """
+        Return the id, name, and the number of created pages of all the users
+        who created at least one page in a specified time range.
+        :param date1: str
+        :param date2: str
+        :return: dict
+        """
+        from dateutil import rrule
+        from datetime import datetime, timedelta
+        all_list = []
+        for dt in rrule.rrule(rrule.HOURLY, dtstart=date1, until=date2):
+            query = f"SELECT * from users WHERE (created_at == '{dt}'); "
+            all_list.extend(list(self.execute(query)))
+        return all_list
 
 
     def insert_values(self, table, val_dict):
@@ -98,7 +120,7 @@ def extract_data(line):
         user_id = '0'
     user_text = dict_line['performer']['user_text']
     page_id = dict_line['page_id']
-    created_at = dict_line['meta']['dt']
+    created_at = datetime.strptime(dict_line['meta']['dt'], "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0)
 
     return {'domain': domain, 'uri': uri, 'user_id': user_id,
             'user_text': user_text, 'page_id': page_id, 'created_at': created_at}
