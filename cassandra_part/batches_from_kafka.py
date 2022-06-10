@@ -24,7 +24,7 @@ class CassandraClient:
         self.session = cluster.connect(self.keyspace)
 
     def execute(self, query):
-        self.session.execute(query)
+        return self.session.execute(query)
 
     def close(self):
         self.session.shutdown()
@@ -35,7 +35,7 @@ class CassandraClient:
         :return: list
         """
         query = f"SELECT DISTINCT domain_ from domains;"
-        return list(self.execute(query))
+        return list([x[0] for x in self.execute(query)])
 
     def select2(self, user_id):
         """
@@ -43,7 +43,7 @@ class CassandraClient:
         :param user_id: str
         :return: list
         """
-        query = f"SELECT uri from users WHERE user_id = '{user_id}';"
+        query = f"SELECT uri from user_pages WHERE user_id = '{user_id}';"
         return list(self.execute(query))
 
     def select3(self, domain):
@@ -75,8 +75,10 @@ class CassandraClient:
         from dateutil import rrule
         from datetime import datetime, timedelta
         all_list = []
-        for dt in rrule.rrule(rrule.HOURLY, dtstart=date1, until=date2):
-            query = f"SELECT * from users WHERE (created_at == '{dt}'); "
+        date1 = datetime.strptime(date1, "%Y-%m-%d %H:%M:%S")
+        date2 = datetime.strptime(date2, "%Y-%m-%d %H:%M:%S")
+        for dt in rrule.rrule(rrule.MINUTELY, dtstart=date1, until=date2):
+            query = f"SELECT user_id, user_text, COUNT(user_id) from users WHERE (created_at = '{dt}') GROUP BY user_id; "
             all_list.extend(list(self.execute(query)))
         return all_list
 
@@ -118,9 +120,9 @@ def extract_data(line):
         user_id = dict_line['performer']['user_id']
     except KeyError:
         user_id = '0'
-    user_text = dict_line['performer']['user_text']
+    user_text = dict_line['performer']['user_text'].replace("'","")
     page_id = dict_line['page_id']
-    created_at = datetime.strptime(dict_line['meta']['dt'], "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0)
+    created_at = datetime.strptime(dict_line['meta']['dt'], "%Y-%m-%dT%H:%M:%SZ").replace(second=0)
 
     return {'domain': domain, 'uri': uri, 'user_id': user_id,
             'user_text': user_text, 'page_id': page_id, 'created_at': created_at}
