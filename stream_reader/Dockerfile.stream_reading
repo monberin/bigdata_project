@@ -1,0 +1,10 @@
+FROM python:3.9-slim
+
+RUN pip install --upgrade pip
+RUN pip install kafka-python
+RUN pip install requests
+
+
+COPY reading_stream.py .
+
+ENTRYPOINT ["python", "reading_stream.py"]
