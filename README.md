@@ -1,5 +1,9 @@
 # WIKI STREAMING PROJECT
 
+## Team
+* Hnatenko Daryna
+* Myntiuk Sofiia
+
 ## System Model
 ![Untitled Diagram drawio](https://user-images.githubusercontent.com/56642774/173186970-583320ee-16c7-4110-bd95-68b1963edd54.png)
 ## DB tables
