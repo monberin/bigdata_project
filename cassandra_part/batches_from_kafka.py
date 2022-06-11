@@ -1,14 +1,14 @@
-import json
-from datetime import datetime
 from json import loads
 from kafka import KafkaConsumer
-
+from dateutil import rrule
+from datetime import datetime
 
 consumer = KafkaConsumer('wiki-data',
                          bootstrap_servers=['kafka-server:9092'],
-                         api_version=(2,0,2),
+                         api_version=(2, 0, 2),
                          value_deserializer=lambda x:
                          loads(x.decode('ascii')))
+
 
 class CassandraClient:
     def __init__(self, host, port, keyspace):
@@ -16,7 +16,7 @@ class CassandraClient:
         self.port = port
         self.keyspace = keyspace
         self.session = None
-        self.row=0
+        self.row = 0
 
     def connect(self):
         from cassandra.cluster import Cluster
@@ -72,8 +72,7 @@ class CassandraClient:
         :param date2: str
         :return: dict
         """
-        from dateutil import rrule
-        from datetime import datetime, timedelta
+
         all_list = []
         date1 = datetime.strptime(date1, "%Y-%m-%d %H:%M:%S")
         date2 = datetime.strptime(date2, "%Y-%m-%d %H:%M:%S")
@@ -82,6 +81,17 @@ class CassandraClient:
             all_list.extend(list(self.execute(query)))
         return all_list
 
+    def selecta1(self):
+        query = f"SELECT entry from a1;"
+        return list(self.execute(query))
+
+    def selecta2(self):
+        query = f"SELECT entry from a2;"
+        return list(self.execute(query))
+
+    def selecta3(self):
+        query = f"SELECT entry from a3;"
+        return list(self.execute(query))
 
     def insert_values(self, table, val_dict):
         # {'domain': domain, 'uri': uri, 'user_id': user_id,
@@ -108,6 +118,19 @@ class CassandraClient:
             at = val_dict["created_at"]
             qr = f"INSERT INTO {table} (user_id, user_text, uri, created_at) VALUES ('{uid}', '{utext}', '{uri}', '{at}')"
             self.execute(qr)
+        if table == 'reports':
+            rtime = val_dict["hour_now"]
+            uid = val_dict["user_id"]
+            utext = val_dict["user_text"]
+            uri = val_dict["uri"]
+            p_title = val_dict["page_title"]
+            ubot = val_dict["user_is_bot"]
+            dom = val_dict["domain"]
+            rid = val_dict["report_id"]
+
+            qr = f"INSERT INTO {table} (report_time, report_id, user_id, user_text, uri, page_title, user_is_bot, domain_) " \
+                 f"VALUES ('{rtime}','{rid}','{uid}', '{utext}', '{uri}', '{p_title}','{ubot}','{dom}')"
+            self.execute(qr)
 
 
 def extract_data(line):
@@ -120,12 +143,17 @@ def extract_data(line):
         user_id = dict_line['performer']['user_id']
     except KeyError:
         user_id = '0'
-    user_text = dict_line['performer']['user_text'].replace("'","")
+    user_text = dict_line['performer']['user_text'].replace("'", "")
     page_id = dict_line['page_id']
+    page_title = dict_line['page_title'].replace("'", "")
+    user_is_bot = dict_line['performer']['user_is_bot']
     created_at = datetime.strptime(dict_line['meta']['dt'], "%Y-%m-%dT%H:%M:%SZ").replace(second=0)
+    hour_now = datetime.now().replace(second=0).strftime("%Y-%m-%d %H:%M:%S")
+    report_id = dict_line['meta']['id']
 
-    return {'domain': domain, 'uri': uri, 'user_id': user_id,
-            'user_text': user_text, 'page_id': page_id, 'created_at': created_at}
+    return {'domain': domain, 'uri': uri, 'user_id': user_id, 'user_text': user_text, 'page_id': page_id,
+            'page_title': page_title, 'user_is_bot': user_is_bot, 'created_at': created_at, 'hour_now': hour_now, 'report_id': report_id}
+
 
 def main():
     client = CassandraClient(host='cassandra-server', port=9042, keyspace='project')
@@ -137,10 +165,10 @@ def main():
         client.insert_values('users', message)
         client.insert_values('domains', message)
         client.insert_values('user_pages', message)
+        client.insert_values('reports', message)
 
     # client.close()
 
 
 if __name__ == '__main__':
     main()
-

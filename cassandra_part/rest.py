@@ -36,6 +36,17 @@ def select5(date1, date2):
     # Return N most reviewed items (by # of reviews) for a given period of time
     return json.dumps(client.select5(date1, date2), indent=4, sort_keys=True, default=str)
 
+@app.get("/a1")
+def selecta1():
+    return json.dumps(client.selecta1(), indent=4, sort_keys=True, default=str)
+
+@app.get("/a2")
+def selecta2():
+    return json.dumps(client.selecta2(), indent=4, sort_keys=True, default=str)
+
+@app.get("/a3")
+def selecta3():
+    return json.dumps(client.selecta3(), indent=4, sort_keys=True, default=str)
 
 
 

@@ -26,4 +26,34 @@ CREATE TABLE IF NOT EXISTS users (
     created_at timestamp,
     PRIMARY KEY (created_at, user_id));
 
+DROP TABLE IF EXISTS reports;
+CREATE TABLE IF NOT EXISTS reports (
+    report_time timestamp,
+    report_id text,
+    user_id text,
+    user_text text,
+    uri text,
+    page_title text,
+    user_is_bot text,
+    domain_ text,
+    PRIMARY KEY (report_time, report_id));
+
+DROP TABLE IF EXISTS a1;
+CREATE TABLE IF NOT EXISTS a1 (
+    id int,
+    entry text,
+    PRIMARY KEY (id));
+
+DROP TABLE IF EXISTS a2;
+CREATE TABLE IF NOT EXISTS a2 (
+    id int,
+    entry text,
+    PRIMARY KEY (id));
+
+DROP TABLE IF EXISTS a3;
+CREATE TABLE IF NOT EXISTS a3 (
+    id int,
+    entry text,
+    PRIMARY KEY (id));
+
 -- docker exec -it node1 cqlsh -e
